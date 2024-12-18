@@ -16,10 +16,9 @@ void nRF905::setup() {
   ESP_LOGD(TAG, "Starting nRF905 initialization");
 
   // SPI Setup
-  if (!this->spi_setup()) {
-    ESP_LOGE(TAG, "SPI setup failed. Check your configuration and wiring.");
-    return;  // Early exit if SPI fails
-  }
+  ESP_LOGE(TAG, "Starting SPI setup.");
+  this->spi_setup();
+  ESP_LOGE(TAG, "Finished SPI setup.");
 
   // GPIO pin setups
   if (this->_gpio_pin_am != NULL) {
@@ -90,10 +89,10 @@ void nRF905::setup() {
   this->_config.clkOutEnable = false;
 
   // Write configurations
-  if (!this->writeConfigRegisters()) {
-    ESP_LOGE(TAG, "Failed to write configuration registers. Check your hardware.");
-    return;  // Exit if configuration write fails
-  }
+  ESP_LOGE(TAG, "Starting Write config registers.");
+  this->writeConfigRegisters();
+  ESP_LOGE(TAG, "Finished Write config registers.;");
+
   this->writeTxAddress(0x89816EA9);
 
   // Set mode to idle
