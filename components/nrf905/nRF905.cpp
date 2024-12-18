@@ -230,51 +230,69 @@ void nRF905::readConfigRegisters(uint8_t *const pStatus) {
 }
 
 void nRF905::writeConfigRegisters(uint8_t *const pStatus) {
+  ESP_LOGD(TAG, "Starting writeConfigRegisters");
+
   Mode mode;
   ConfigBuffer buffer;
 #if CHECK_REG_WRITE
   uint8_t writeData[NRF905_REGISTER_COUNT];
 #endif
 
+  // Save the current mode and set the device to Idle
   mode = this->_mode;
   this->setMode(Idle);
+  ESP_LOGD(TAG, "Set mode to Idle for configuration writing");
 
+  // Print the current configuration being written
   this->printConfig(&this->_config);
 
-  // Create data
+  // Encode the configuration into the buffer
   buffer.command = NRF905_COMMAND_W_CONFIG;
   this->encodeConfigRegisters(&this->_config, &buffer);
 
-  ESP_LOGV(TAG, "Write config data: %s", hexArrayToStr(buffer.data, NRF905_REGISTER_COUNT));
+  // Log the encoded configuration data
+  ESP_LOGV(TAG, "Encoded configuration data: %s", hexArrayToStr(buffer.data, NRF905_REGISTER_COUNT));
+
 #if CHECK_REG_WRITE
+  // Copy the configuration data for write verification
   (void) memcpy(writeData, buffer.data, NRF905_REGISTER_COUNT);
 #endif
 
-  this->spiTransfer((uint8_t *) &buffer, sizeof(ConfigBuffer));
+  // Write the configuration buffer via SPI
+  this->spiTransfer((uint8_t *)&buffer, sizeof(ConfigBuffer));
+  ESP_LOGD(TAG, "Configuration data written via SPI");
 
 #if CHECK_REG_WRITE
-  // Check config write by reading config back and compare
+  // Verify the configuration write by reading it back
+  ESP_LOGD(TAG, "Verifying configuration write");
   {
     ConfigBuffer bufferRead;
 
     bufferRead.command = NRF905_COMMAND_R_CONFIG;
     (void) memset(bufferRead.data, 0, NRF905_REGISTER_COUNT);
 
-    this->spiTransfer((uint8_t *) &bufferRead, sizeof(ConfigBuffer));
-    if (memcmp((void *) writeData, (void *) bufferRead.data, NRF905_REGISTER_COUNT) != 0) {
-      ESP_LOGE(TAG, "Config write failed");
+    this->spiTransfer((uint8_t *)&bufferRead, sizeof(ConfigBuffer));
+    if (memcmp((void *)writeData, (void *)bufferRead.data, NRF905_REGISTER_COUNT) != 0) {
+      ESP_LOGE(TAG, "Config write verification failed. Written and read data do not match.");
+      ESP_LOGV(TAG, "Written data: %s", hexArrayToStr(writeData, NRF905_REGISTER_COUNT));
+      ESP_LOGV(TAG, "Read-back data: %s", hexArrayToStr(bufferRead.data, NRF905_REGISTER_COUNT));
     } else {
-      ESP_LOGV(TAG, "Write config OK");
+      ESP_LOGV(TAG, "Config write verification succeeded. Data matches.");
     }
   }
 #endif
 
+  // Set the command status
   if (pStatus != NULL) {
     *pStatus = buffer.command;
   }
+  ESP_LOGD(TAG, "Command status updated");
 
-  // Restore mode
+  // Restore the previous mode
   this->setMode(mode);
+  ESP_LOGD(TAG, "Restored mode to: %d", mode);
+
+  ESP_LOGD(TAG, "Completed writeConfigRegisters");
 }
 
 void nRF905::writeTxAddress(const uint32_t txAddress, uint8_t *const pStatus) {
