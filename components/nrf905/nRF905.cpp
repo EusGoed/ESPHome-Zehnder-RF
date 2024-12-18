@@ -1,10 +1,6 @@
 #include "nRF905.h"
 #include "esphome/core/log.h"
 
-#include <string.h>
-
-#define CHECK_REG_WRITE true
-
 namespace esphome {
 namespace nrf905 {
 
@@ -16,10 +12,7 @@ void nRF905::setup() {
   ESP_LOGD(TAG, "Starting nRF905 initialization");
 
   // SPI Setup
-  if (!this->spi_setup()) {
-    ESP_LOGE(TAG, "SPI setup failed. Check your configuration and wiring.");
-    return;  // Early exit if SPI fails
-  }
+  this->spi_setup();  // Use SPIDevice's implementation
 
   // GPIO pin setups
   if (this->_gpio_pin_am != NULL) {
@@ -41,7 +34,7 @@ void nRF905::setup() {
     this->_gpio_pin_ce->setup();
   } else {
     ESP_LOGE(TAG, "CE pin is not configured. Initialization aborted.");
-    return;  // CE pin is mandatory
+    return;
   }
 
   if (this->_gpio_pin_dr != NULL) {
@@ -56,7 +49,7 @@ void nRF905::setup() {
     this->_gpio_pin_pwr->setup();
   } else {
     ESP_LOGE(TAG, "PWR pin is not configured. Initialization aborted.");
-    return;  // PWR pin is mandatory
+    return;
   }
 
   if (this->_gpio_pin_txen != NULL) {
@@ -64,7 +57,7 @@ void nRF905::setup() {
     this->_gpio_pin_txen->setup();
   } else {
     ESP_LOGE(TAG, "TXEN pin is not configured. Initialization aborted.");
-    return;  // TXEN pin is mandatory
+    return;
   }
 
   // Initialize the device in PowerDown mode
@@ -90,10 +83,7 @@ void nRF905::setup() {
   this->_config.clkOutEnable = false;
 
   // Write configurations
-  if (!this->writeConfigRegisters()) {
-    ESP_LOGE(TAG, "Failed to write configuration registers. Check your hardware.");
-    return;  // Exit if configuration write fails
-  }
+  this->writeConfigRegisters();
   this->writeTxAddress(0x89816EA9);
 
   // Set mode to idle
@@ -126,21 +116,7 @@ void nRF905::dump_config() {
   LOG_PIN("  TXEN Pin:", this->_gpio_pin_txen);
 }
 
-void nRF905::loop() {
-  // Code remains unchanged, but you could add additional debug logs here
-}
-
-void nRF905::spi_setup() {
-  ESP_LOGD(TAG, "Initializing SPI bus");
-  if (this->cs_ == NULL) {
-    ESP_LOGE(TAG, "CS pin is not configured for SPI.");
-    return;
-  }
-  ESP_LOGD(TAG, "SPI bus initialized successfully.");
-}
-
 void nRF905::setMode(const Mode mode) {
-  // Debug logging to track mode transitions
   ESP_LOGD(TAG, "Setting mode: %d", mode);
 
   // Set power
@@ -160,3 +136,6 @@ void nRF905::setMode(const Mode mode) {
 
   this->_mode = mode;
 }
+
+}  // namespace nrf905
+}  // namespace esphome
