@@ -130,14 +130,13 @@ void nRF905::loop() {
   // Code remains unchanged, but you could add additional debug logs here
 }
 
-bool nRF905::spi_setup() {
+void nRF905::spi_setup() {
   ESP_LOGD(TAG, "Initializing SPI bus");
-  // Add SPI initialization logic if needed
   if (this->cs_ == NULL) {
     ESP_LOGE(TAG, "CS pin is not configured for SPI.");
-    return false;
+    return;
   }
-  return true;  // Return true if SPI setup is successful
+  ESP_LOGD(TAG, "SPI bus initialized successfully.");
 }
 
 void nRF905::setMode(const Mode mode) {
