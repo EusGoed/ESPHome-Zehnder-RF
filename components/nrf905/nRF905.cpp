@@ -99,6 +99,8 @@ void nRF905::setup() {
   this->setMode(Idle);
 
   ESP_LOGD(TAG, "nRF905 Setup complete");
+
+  this->dump_config();
 }
 
 void nRF905::dump_config() {
